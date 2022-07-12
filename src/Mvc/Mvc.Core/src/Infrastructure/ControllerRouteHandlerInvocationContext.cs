@@ -11,9 +11,15 @@ namespace Microsoft.AspNetCore.Mvc.Infrastructure;
 // REVIEW: Should this be public API?
 internal class ControllerRouteHandlerInvocationContext : RouteHandlerInvocationContext
 {
-    public ControllerRouteHandlerInvocationContext(HttpContext httpContext, ObjectMethodExecutor executor, object controller, object?[]? arguments)
+    public ControllerRouteHandlerInvocationContext(
+        ActionContext actionContext,
+        ObjectMethodExecutor executor,
+        IActionResultTypeMapper mapper,
+        object controller,
+        object?[]? arguments)
     {
-        HttpContext = httpContext;
+        ActionContext = actionContext;
+        Mapper = mapper;
         Executor = executor;
         Controller = controller;
         Arguments = arguments ?? Array.Empty<object?>();
@@ -21,9 +27,13 @@ internal class ControllerRouteHandlerInvocationContext : RouteHandlerInvocationC
 
     public object Controller { get; }
 
+    internal IActionResultTypeMapper Mapper { get; }
+
+    internal ActionContext ActionContext { get; }
+
     internal ObjectMethodExecutor Executor { get; }
 
-    public override HttpContext HttpContext { get; }
+    public override HttpContext HttpContext => ActionContext.HttpContext;
 
     public override IList<object?> Arguments { get; }
 

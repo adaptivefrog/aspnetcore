@@ -431,32 +431,13 @@ internal sealed class ActionEndpointFactory
             // Make them null to avoid the default behavior
             reb.RouteHandlerFilterFactories = null;
 
+            RouteHandlerFilterDelegate del = invocationContext =>
+            {
+                // By the time this is called, we have the cache entry
+                return cad.CacheEntry!.InnerActionMethodExecutor.Execute((ControllerRouteHandlerInvocationContext)invocationContext);
+            };
+
             var context = new RouteHandlerContext(cad.MethodInfo, builder.Metadata, _serviceProvider);
-
-            var isAsync = AwaitableInfo.IsTypeAwaitable(cad.MethodInfo.ReturnType, out _);
-
-            RouteHandlerFilterDelegate del = default!;
-
-            // Most inner delegate needs a ControllerRouteHandlerInvocationContext to function
-            if (isAsync)
-            {
-                del = static async (context) =>
-                {
-                    var controllerRhiContext = (ControllerRouteHandlerInvocationContext)context;
-                    Debug.Assert(controllerRhiContext.Executor.IsMethodAsync);
-
-                    return await controllerRhiContext.Executor.ExecuteAsync(controllerRhiContext.Controller, (object[])controllerRhiContext.Arguments);
-                };
-            }
-            else
-            {
-                del = static (context) =>
-                {
-                    var controllerRhiContext = (ControllerRouteHandlerInvocationContext)context;
-                    Debug.Assert(!controllerRhiContext.Executor.IsMethodAsync);
-                    return new(controllerRhiContext.Executor.Execute(controllerRhiContext.Controller, (object[])controllerRhiContext.Arguments));
-                };
-            }
 
             for (var i = routeHandlerFilters.Count - 1; i >= 0; i--)
             {
